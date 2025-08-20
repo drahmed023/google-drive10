@@ -3,7 +3,11 @@ import { useAuth } from '../contexts/AuthContext'
 import { StudyStats } from './StudyStats'
 import { StudyTimer } from './StudyTimer'
 import { FileManager } from './FileManager'
-import { LogOut, BarChart3, Clock, FolderOpen, User, GraduationCap } from 'lucide-react'
+import { TaskManager } from './TaskManager'
+import { StudyCalendar } from './StudyCalendar'
+import { StudyGroups } from './StudyGroups'
+import { Settings } from './Settings'
+import { LogOut, BarChart3, Clock, FolderOpen, User, GraduationCap, CheckSquare, Calendar, Users, Settings as SettingsIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export function Dashboard() {
@@ -22,7 +26,11 @@ export function Dashboard() {
   const tabs = [
     { id: 'stats', name: 'Statistics', icon: BarChart3 },
     { id: 'timer', name: 'Study Timer', icon: Clock },
+    { id: 'tasks', name: 'Tasks', icon: CheckSquare },
+    { id: 'calendar', name: 'Calendar', icon: Calendar },
     { id: 'files', name: 'Files', icon: FolderOpen },
+    { id: 'groups', name: 'Study Groups', icon: Users },
+    { id: 'settings', name: 'Settings', icon: SettingsIcon },
   ]
 
   return (
@@ -85,7 +93,11 @@ export function Dashboard() {
         <div className="transition-all duration-300 ease-in-out">
           {activeTab === 'stats' && <StudyStats />}
           {activeTab === 'timer' && <StudyTimer />}
+          {activeTab === 'tasks' && <TaskManager />}
+          {activeTab === 'calendar' && <StudyCalendar />}
           {activeTab === 'files' && <FileManager />}
+          {activeTab === 'groups' && <StudyGroups />}
+          {activeTab === 'settings' && <Settings />}
         </div>
       </div>
     </div>
