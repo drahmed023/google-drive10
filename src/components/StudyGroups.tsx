@@ -273,7 +273,7 @@ export function StudyGroups() {
               </div>
             </div>
           ) : (
-          {messages.map((message) => (
+            messages.map((message) => (
             <div
               key={message.id}
               className={`flex ${message.user_id === user?.id ? 'justify-end' : 'justify-start'}`}

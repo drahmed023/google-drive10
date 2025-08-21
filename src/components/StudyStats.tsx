@@ -85,7 +85,6 @@ export function StudyStats() {
     // Study streak calculation
     let currentStreak = 0
     let maxStreak = 0
-    let tempStreak = 0
     const sortedSessions = [...sessions].sort((a, b) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )
@@ -105,6 +104,7 @@ export function StudyStats() {
     
     // Calculate max streak
     const allDates = Array.from(studyDates).sort()
+    let tempStreak = 0
     for (let i = 0; i < allDates.length; i++) {
       tempStreak = 1
       for (let j = i + 1; j < allDates.length; j++) {

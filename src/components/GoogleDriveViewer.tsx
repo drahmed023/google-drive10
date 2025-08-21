@@ -12,7 +12,8 @@ import {
   Video,
   Music,
   Archive,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -46,22 +47,26 @@ export function GoogleDriveViewer() {
   }, [])
 
   const fetchDriveData = async () => {
+    setLoading(true)
     try {
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-drive`, {
         headers: {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
         }
       })
 
       if (!response.ok) {
-        throw new Error('Failed to fetch Google Drive data')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to fetch Google Drive data')
       }
 
       const data = await response.json()
       setDriveData(data)
+      toast.success('Google Drive files loaded successfully!')
     } catch (error) {
       console.error('Error fetching Google Drive data:', error)
-      toast.error('Failed to load Google Drive files')
+      toast.error(`Failed to load Google Drive files: ${error.message}`)
     } finally {
       setLoading(false)
     }
@@ -69,9 +74,9 @@ export function GoogleDriveViewer() {
 
   const getFileIcon = (mimeType: string) => {
     if (mimeType.includes('pdf')) return <FileText className="w-4 h-4 text-red-500" />
-    if (mimeType.includes('document')) return <FileText className="w-4 h-4 text-blue-500" />
-    if (mimeType.includes('spreadsheet')) return <FileText className="w-4 h-4 text-green-500" />
-    if (mimeType.includes('presentation')) return <FileText className="w-4 h-4 text-orange-500" />
+    if (mimeType.includes('document') || mimeType.includes('word')) return <FileText className="w-4 h-4 text-blue-500" />
+    if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return <FileText className="w-4 h-4 text-green-500" />
+    if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return <FileText className="w-4 h-4 text-orange-500" />
     if (mimeType.includes('image')) return <Image className="w-4 h-4 text-purple-500" />
     if (mimeType.includes('video')) return <Video className="w-4 h-4 text-red-600" />
     if (mimeType.includes('audio')) return <Music className="w-4 h-4 text-pink-500" />
@@ -102,13 +107,17 @@ export function GoogleDriveViewer() {
   const handleFilePreview = (file: DriveFile) => {
     setSelectedFile(file)
     window.open(file.webViewLink, '_blank')
+    toast.success(`Opening ${file.name} for preview`)
   }
 
   const handleFileDownload = (file: DriveFile) => {
     if (file.webContentLink) {
       window.open(file.webContentLink, '_blank')
+      toast.success(`Downloading ${file.name}`)
     } else {
-      toast.error('Download link not available for this file')
+      // For Google Docs, Sheets, etc., use the webViewLink
+      window.open(file.webViewLink, '_blank')
+      toast.info('File opened in Google Drive for download')
     }
   }
 
@@ -131,18 +140,18 @@ export function GoogleDriveViewer() {
       <div key={folder.id} className="mb-2">
         {folder.name && (
           <div
-            className="flex items-center gap-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors"
-            style={{ paddingLeft: `${depth * 20 + 8}px` }}
+            className="flex items-center gap-2 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors group"
+            style={{ paddingLeft: `${depth * 20 + 12}px` }}
             onClick={() => toggleFolder(folder.id)}
           >
             {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-gray-500" />
+              <ChevronDown className="w-4 h-4 text-gray-500 transition-transform" />
             ) : (
-              <ChevronRight className="w-4 h-4 text-gray-500" />
+              <ChevronRight className="w-4 h-4 text-gray-500 transition-transform" />
             )}
             <FolderOpen className="w-5 h-5 text-blue-500" />
             <span className="font-medium text-gray-800 dark:text-white">{folder.name}</span>
-            <span className="text-xs text-gray-500 ml-auto">
+            <span className="text-xs text-gray-500 ml-auto bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded-full">
               {folder.files.length + folder.folders.length} items
             </span>
           </div>
@@ -157,31 +166,31 @@ export function GoogleDriveViewer() {
             {filteredFiles.map(file => (
               <div
                 key={file.id}
-                className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors group"
-                style={{ paddingLeft: `${(depth + 1) * 20 + 8}px` }}
+                className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors group border-l-2 border-transparent hover:border-purple-300"
+                style={{ paddingLeft: `${(depth + 1) * 20 + 12}px` }}
               >
                 {getFileIcon(file.mimeType)}
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-gray-800 dark:text-white truncate">
+                  <h4 className="font-medium text-gray-800 dark:text-white truncate" title={file.name}>
                     {file.name}
                   </h4>
                   <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {file.size && <span>{formatFileSize(file.size)}</span>}
-                    <span>{new Date(file.modifiedTime).toLocaleDateString()}</span>
+                    {file.size && <span className="bg-gray-100 dark:bg-gray-600 px-2 py-0.5 rounded">{formatFileSize(file.size)}</span>}
+                    <span>{new Date(file.modifiedTime).toLocaleDateString('ar-EG')}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => handleFilePreview(file)}
                     className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                    title="Preview"
+                    title="معاينة الملف"
                   >
                     <Eye className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleFileDownload(file)}
                     className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
-                    title="Download"
+                    title="تحميل الملف"
                   >
                     <Download className="w-4 h-4" />
                   </button>
@@ -205,7 +214,7 @@ export function GoogleDriveViewer() {
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
-          <span className="ml-3 text-gray-600 dark:text-gray-300">Loading Google Drive files...</span>
+          <span className="ml-3 text-gray-600 dark:text-gray-300">جاري تحميل ملفات Google Drive...</span>
         </div>
       </div>
     )
@@ -216,13 +225,15 @@ export function GoogleDriveViewer() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
           <FolderOpen className="w-6 h-6 text-blue-500" />
-          Google Drive Files
+          ملفات Google Drive
         </h2>
         <button
           onClick={fetchDriveData}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 disabled:opacity-50"
         >
-          Refresh
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          تحديث
         </button>
       </div>
 
@@ -231,7 +242,7 @@ export function GoogleDriveViewer() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Search files and folders..."
+            placeholder="البحث في الملفات والمجلدات..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -239,21 +250,32 @@ export function GoogleDriveViewer() {
         </div>
       </div>
 
-      <div className="max-h-96 overflow-y-auto scrollbar-thin">
+      <div className="max-h-[600px] overflow-y-auto scrollbar-thin">
         {driveData ? (
-          renderFolder(driveData)
+          <div className="space-y-2">
+            {renderFolder(driveData)}
+          </div>
         ) : (
           <div className="text-center py-12">
             <FolderOpen className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400 mb-2">
-              No files found
+              لم يتم العثور على ملفات
             </h3>
             <p className="text-gray-400 dark:text-gray-500">
-              Unable to load Google Drive files
+              تعذر تحميل ملفات Google Drive
             </p>
           </div>
         )}
       </div>
+
+      {driveData && (
+        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
+            <span>إجمالي الملفات: {driveData.files.length}</span>
+            <span>المجلدات: {driveData.folders.length}</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

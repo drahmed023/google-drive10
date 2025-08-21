@@ -49,11 +49,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (user) {
       loadUserPreferences()
+    } else {
+      // Reset preferences when user logs out
+      setPreferences(null)
+      setTheme('light')
+      setPrimaryColorState('purple')
     }
   }, [user])
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
+    // Apply theme to body for better coverage
+    document.body.className = theme === 'dark' ? 'dark' : ''
   }, [theme])
 
   const loadUserPreferences = async () => {
