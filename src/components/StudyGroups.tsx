@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Users, Plus, MessageCircle, Send, Crown, UserPlus, Settings } from 'lucide-react'
+import { Users, Plus, MessageCircle, Send, Crown, UserPlus, Settings, Hash } from 'lucide-react'
 import { supabase, StudyGroup, GroupMember, GroupMessage } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -11,6 +11,7 @@ export function StudyGroups() {
   const [messages, setMessages] = useState<GroupMessage[]>([])
   const [members, setMembers] = useState<GroupMember[]>([])
   const [loading, setLoading] = useState(true)
+  const [sendingMessage, setSendingMessage] = useState(false)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [newMessage, setNewMessage] = useState('')
   const { user } = useAuth()
@@ -42,7 +43,14 @@ export function StudyGroups() {
           table: 'group_messages',
           filter: `group_id=eq.${selectedGroup.id}`
         }, (payload) => {
-          setMessages(prev => [...prev, payload.new as GroupMessage])
+          const newMessage = payload.new as GroupMessage
+          setMessages(prev => {
+            // Avoid duplicates
+            if (prev.some(msg => msg.id === newMessage.id)) {
+              return prev
+            }
+            return [...prev, newMessage]
+          })
         })
         .subscribe()
 
@@ -183,6 +191,7 @@ export function StudyGroups() {
     e.preventDefault()
     if (!newMessage.trim() || !selectedGroup) return
 
+    setSendingMessage(true)
     try {
       const { error } = await supabase
         .from('group_messages')
@@ -197,6 +206,8 @@ export function StudyGroups() {
     } catch (error) {
       console.error('Error sending message:', error)
       toast.error('Failed to send message')
+    } finally {
+      setSendingMessage(false)
     }
   }
 
@@ -230,17 +241,20 @@ export function StudyGroups() {
 
   if (selectedGroup) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 h-[600px] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 h-[700px] flex flex-col">
         <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSelectedGroup(null)}
-              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
             >
               ←
             </button>
             <div>
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white">{selectedGroup.name}</h2>
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <Hash className="w-5 h-5 text-purple-500" />
+                {selectedGroup.name}
+              </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">{members.length} members</p>
             </div>
           </div>
@@ -250,7 +264,15 @@ export function StudyGroups() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto mb-4 space-y-3">
+        <div className="flex-1 overflow-y-auto mb-4 space-y-3 scrollbar-thin">
+          {messages.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+              <div className="text-center">
+                <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No messages yet. Start the conversation!</p>
+              </div>
+            </div>
+          ) : (
           {messages.map((message) => (
             <div
               key={message.id}
@@ -280,6 +302,7 @@ export function StudyGroups() {
               </div>
             </div>
           ))}
+          )}
         </div>
 
         <form onSubmit={sendMessage} className="flex gap-2">
@@ -292,7 +315,7 @@ export function StudyGroups() {
           />
           <button
             type="submit"
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || sendingMessage}
             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Send className="w-4 h-4" />

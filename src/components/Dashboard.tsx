@@ -7,6 +7,7 @@ import { TaskManager } from './TaskManager'
 import { StudyCalendar } from './StudyCalendar'
 import { StudyGroups } from './StudyGroups'
 import { Settings } from './Settings'
+import GoogleDriveViewer from './GoogleDriveViewer'
 import { LogOut, BarChart3, Clock, FolderOpen, User, GraduationCap, CheckSquare, Calendar, Users, Settings as SettingsIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -30,6 +31,7 @@ export function Dashboard() {
     { id: 'calendar', name: 'Calendar', icon: Calendar },
     { id: 'files', name: 'Files', icon: FolderOpen },
     { id: 'groups', name: 'Study Groups', icon: Users },
+    { id: 'drive', name: 'Google Drive', icon: FolderOpen },
     { id: 'settings', name: 'Settings', icon: SettingsIcon },
   ]
 
@@ -97,6 +99,7 @@ export function Dashboard() {
           {activeTab === 'calendar' && <StudyCalendar />}
           {activeTab === 'files' && <FileManager />}
           {activeTab === 'groups' && <StudyGroups />}
+          {activeTab === 'drive' && <GoogleDriveViewer />}
           {activeTab === 'settings' && <Settings />}
         </div>
       </div>

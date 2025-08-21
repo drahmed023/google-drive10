@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react'
-import { Clock, BookOpen, TrendingUp, Calendar, Award, Target } from 'lucide-react'
-import { supabase, StudySession } from '../lib/supabase'
+import { Clock, BookOpen, TrendingUp, Calendar, Award, Target, Brain, Zap, Trophy, Star } from 'lucide-react'
+import { supabase, StudySession, Task } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 
 export function StudyStats() {
   const [sessions, setSessions] = useState<StudySession[]>([])
+  const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
 
   useEffect(() => {
     if (user) {
       fetchStudySessions()
+      fetchTasks()
     }
   }, [user])
 
@@ -31,10 +33,32 @@ export function StudyStats() {
     }
   }
 
+  const fetchTasks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setTasks(data || [])
+    } catch (error) {
+      console.error('Error fetching tasks:', error)
+    }
+  }
+
   const getStats = () => {
     const totalMinutes = sessions.reduce((sum, session) => sum + session.duration, 0)
     const totalHours = Math.round(totalMinutes / 60 * 10) / 10
     const totalSessions = sessions.length
+    
+    // Task statistics
+    const completedTasks = tasks.filter(task => task.completed).length
+    const pendingTasks = tasks.filter(task => !task.completed).length
+    const overdueTasks = tasks.filter(task => 
+      !task.completed && task.due_date && new Date(task.due_date) < new Date()
+    ).length
     
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -58,13 +82,58 @@ export function StudyStats() {
 
     const topSubject = Object.entries(subjects).sort(([,a], [,b]) => b - a)[0]
 
+    // Study streak calculation
+    let currentStreak = 0
+    let maxStreak = 0
+    let tempStreak = 0
+    const sortedSessions = [...sessions].sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+    
+    const studyDates = new Set(
+      sortedSessions.map(session => 
+        new Date(session.created_at).toDateString()
+      )
+    )
+    
+    // Calculate current streak
+    let checkDate = new Date()
+    while (studyDates.has(checkDate.toDateString())) {
+      currentStreak++
+      checkDate.setDate(checkDate.getDate() - 1)
+    }
+    
+    // Calculate max streak
+    const allDates = Array.from(studyDates).sort()
+    for (let i = 0; i < allDates.length; i++) {
+      tempStreak = 1
+      for (let j = i + 1; j < allDates.length; j++) {
+        const prevDate = new Date(allDates[j - 1])
+        const currDate = new Date(allDates[j])
+        const diffTime = currDate.getTime() - prevDate.getTime()
+        const diffDays = diffTime / (1000 * 60 * 60 * 24)
+        
+        if (diffDays === 1) {
+          tempStreak++
+        } else {
+          break
+        }
+      }
+      maxStreak = Math.max(maxStreak, tempStreak)
+    }
+
     return {
       totalHours,
       totalSessions,
       todayMinutes,
       weekMinutes,
       topSubject: topSubject ? { name: topSubject[0], minutes: topSubject[1] } : null,
-      subjects
+      subjects,
+      completedTasks,
+      pendingTasks,
+      overdueTasks,
+      currentStreak,
+      maxStreak
     }
   }
 
@@ -121,7 +190,8 @@ export function StudyStats() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Main Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white">
           <div className="flex items-center justify-between mb-4">
             <Clock className="w-8 h-8" />
@@ -154,6 +224,60 @@ export function StudyStats() {
           <div className="text-orange-100">This Week</div>
         </div>
       </div>
+      
+      {/* Additional Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl shadow-lg p-6 text-white">
+          <div className="flex items-center justify-between mb-4">
+            <Trophy className="w-8 h-8" />
+            <div className="text-2xl font-bold">{stats.completedTasks}</div>
+          </div>
+          <div className="text-indigo-100">Tasks Completed</div>
+        </div>
+
+        <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl shadow-lg p-6 text-white">
+          <div className="flex items-center justify-between mb-4">
+            <Zap className="w-8 h-8" />
+            <div className="text-2xl font-bold">{stats.currentStreak}</div>
+          </div>
+          <div className="text-pink-100">Current Streak (days)</div>
+        </div>
+
+        <div className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl shadow-lg p-6 text-white">
+          <div className="flex items-center justify-between mb-4">
+            <Star className="w-8 h-8" />
+            <div className="text-2xl font-bold">{stats.maxStreak}</div>
+          </div>
+          <div className="text-teal-100">Best Streak</div>
+        </div>
+
+        <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl shadow-lg p-6 text-white">
+          <div className="flex items-center justify-between mb-4">
+            <Brain className="w-8 h-8" />
+            <div className="text-2xl font-bold">{stats.pendingTasks}</div>
+          </div>
+          <div className="text-cyan-100">Pending Tasks</div>
+        </div>
+      </div>
+
+      {/* Task Overview */}
+      {stats.overdueTasks > 0 && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center">
+              <Target className="w-5 h-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-red-800 dark:text-red-200">
+                {stats.overdueTasks} Overdue Task{stats.overdueTasks > 1 ? 's' : ''}
+              </h3>
+              <p className="text-sm text-red-600 dark:text-red-300">
+                You have tasks that need immediate attention
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl shadow-lg p-6">
