@@ -46,6 +46,7 @@ export default function StudyGroups() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [userMemberGroupIds, setUserMemberGroupIds] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -72,19 +73,45 @@ export default function StudyGroups() {
 
   const fetchGroups = async () => {
     try {
-      const { data, error } = await supabase
+      // First, get groups that are public or created by the user
+      const { data: publicAndOwnedGroups, error: publicError } = await supabase
         .from('study_groups')
-        .select(`
-          *,
-          group_members!inner(user_id)
-        `)
-        .or(`is_private.eq.false,created_by.eq.${user?.id},group_members.user_id.eq.${user?.id}`);
+        .select('*')
+        .or(`is_private.eq.false,created_by.eq.${user?.id}`);
 
-      if (error) throw error;
+      if (publicError) throw publicError;
 
+      // Second, get group IDs where the user is a member
+      const { data: membershipData, error: membershipError } = await supabase
+        .from('group_members')
+        .select('group_id')
+        .eq('user_id', user?.id);
+
+      if (membershipError) throw membershipError;
+
+      const memberGroupIds = membershipData?.map(m => m.group_id) || [];
+      setUserMemberGroupIds(memberGroupIds);
+
+      // Third, get details of groups where user is a member (if any)
+      let memberGroups: StudyGroup[] = [];
+      if (memberGroupIds.length > 0) {
+        const { data: memberGroupsData, error: memberGroupsError } = await supabase
+          .from('study_groups')
+          .select('*')
+          .in('id', memberGroupIds);
+
+        if (memberGroupsError) throw memberGroupsError;
+        memberGroups = memberGroupsData || [];
+      }
+
+      // Combine and deduplicate results
+      const allGroups = [...(publicAndOwnedGroups || []), ...memberGroups];
+      const uniqueGroups = allGroups.filter((group, index, self) => 
+        index === self.findIndex(g => g.id === group.id)
+      );
       // Count members for each group
       const groupsWithCounts = await Promise.all(
-        data.map(async (group) => {
+        uniqueGroups.map(async (group) => {
           const { count } = await supabase
             .from('group_members')
             .select('*', { count: 'exact', head: true })
@@ -265,10 +292,8 @@ export default function StudyGroups() {
   );
 
   const isUserMember = (groupId: string) => {
-    return groups.some(group => 
-      group.id === groupId && 
-      (group.created_by === user?.id || members.some(member => member.user_id === user?.id))
-    );
+    const group = groups.find(g => g.id === groupId);
+    return group && (group.created_by === user?.id || userMemberGroupIds.includes(groupId));
   };
 
   if (loading) {
