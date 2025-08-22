@@ -13,8 +13,10 @@ import {
   Music,
   Archive,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Brain
 } from 'lucide-react'
+import { QuizGenerator } from './QuizGenerator'
 import toast from 'react-hot-toast'
 
 interface DriveFile {
@@ -41,6 +43,8 @@ export function GoogleDriveViewer() {
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const [selectedFile, setSelectedFile] = useState<DriveFile | null>(null)
+  const [showQuizGenerator, setShowQuizGenerator] = useState(false)
+  const [selectedFileForQuiz, setSelectedFileForQuiz] = useState<{ content: string, name: string } | null>(null)
 
   useEffect(() => {
     fetchDriveData()
@@ -121,6 +125,29 @@ export function GoogleDriveViewer() {
     }
   }
 
+  const handleGenerateQuiz = async (file: DriveFile) => {
+    if (!file.mimeType.includes('pdf') && !file.mimeType.includes('document') && !file.mimeType.includes('text')) {
+      toast.error('يمكن إنشاء اختبارات فقط من ملفات PDF والمستندات النصية')
+      return
+    }
+
+    try {
+      // For demo purposes, we'll use the file name as content
+      // In a real implementation, you'd extract text from PDF/document
+      const mockContent = `محتوى الملف: ${file.name}\n\nهذا محتوى تجريبي لإنشاء الاختبار. في التطبيق الحقيقي، سيتم استخراج النص الفعلي من الملف.`
+      
+      setSelectedFileForQuiz({
+        content: mockContent,
+        name: file.name
+      })
+      setShowQuizGenerator(true)
+      toast.success('جاري تحضير الملف لإنشاء الاختبار...')
+    } catch (error) {
+      console.error('Error preparing file for quiz:', error)
+      toast.error('فشل في تحضير الملف للاختبار')
+    }
+  }
+
   const filterFiles = (files: DriveFile[]) => {
     if (!searchTerm) return files
     return files.filter(file => 
@@ -190,10 +217,19 @@ export function GoogleDriveViewer() {
                   <button
                     onClick={() => handleFileDownload(file)}
                     className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
-                    title="تحميل الملف"
+                    title="Download File"
                   >
                     <Download className="w-4 h-4" />
                   </button>
+                  {(file.mimeType.includes('pdf') || file.mimeType.includes('document') || file.mimeType.includes('text')) && (
+                    <button
+                      onClick={() => handleGenerateQuiz(file)}
+                      className="p-2 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+                      title="إنشاء اختبار تفاعلي"
+                    >
+                      <Brain className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -225,7 +261,7 @@ export function GoogleDriveViewer() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
           <FolderOpen className="w-6 h-6 text-blue-500" />
-          ملفات Google Drive
+          Google Drive Files
         </h2>
         <button
           onClick={fetchDriveData}
@@ -233,7 +269,7 @@ export function GoogleDriveViewer() {
           className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          تحديث
+          Refresh
         </button>
       </div>
 
@@ -242,7 +278,7 @@ export function GoogleDriveViewer() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
-            placeholder="البحث في الملفات والمجلدات..."
+            placeholder="Search files and folders..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -259,10 +295,10 @@ export function GoogleDriveViewer() {
           <div className="text-center py-12">
             <FolderOpen className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400 mb-2">
-              لم يتم العثور على ملفات
+              No files found
             </h3>
             <p className="text-gray-400 dark:text-gray-500">
-              تعذر تحميل ملفات Google Drive
+              Failed to load Google Drive files
             </p>
           </div>
         )}
@@ -271,10 +307,21 @@ export function GoogleDriveViewer() {
       {driveData && (
         <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
           <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
-            <span>إجمالي الملفات: {driveData.files.length}</span>
-            <span>المجلدات: {driveData.folders.length}</span>
+            <span>Total Files: {driveData.files.length}</span>
+            <span>Folders: {driveData.folders.length}</span>
           </div>
         </div>
+      )}
+
+      {showQuizGenerator && selectedFileForQuiz && (
+        <QuizGenerator
+          fileContent={selectedFileForQuiz.content}
+          fileName={selectedFileForQuiz.name}
+          onClose={() => {
+            setShowQuizGenerator(false)
+            setSelectedFileForQuiz(null)
+          }}
+        />
       )}
     </div>
   )
