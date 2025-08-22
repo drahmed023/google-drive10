@@ -31,7 +31,7 @@ export function Dashboard() {
     { id: 'calendar', name: 'Calendar', icon: Calendar },
     { id: 'files', name: 'Files', icon: FolderOpen },
     { id: 'groups', name: 'Study Groups', icon: Users },
-    { id: 'drive', name: 'Google Drive', icon: FolderOpen },
+    { id: 'drive', name: 'Google Drive & Quiz', icon: FolderOpen },
     { id: 'settings', name: 'Settings', icon: SettingsIcon },
   ]
 

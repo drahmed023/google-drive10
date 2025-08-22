@@ -73,15 +73,14 @@ export default function StudyGroups() {
 
   const fetchGroups = async () => {
     try {
-      // First, get groups that are public or created by the user
-      const { data: publicAndOwnedGroups, error: publicError } = await supabase
+      // Get all groups that are either public or created by the user
+      const { data: allGroups, error: groupsError } = await supabase
         .from('study_groups')
-        .select('*')
-        .or(`is_private.eq.false,created_by.eq.${user?.id}`);
+        .select('*');
 
-      if (publicError) throw publicError;
+      if (groupsError) throw groupsError;
 
-      // Second, get group IDs where the user is a member
+      // Get group IDs where the user is a member
       const { data: membershipData, error: membershipError } = await supabase
         .from('group_members')
         .select('group_id')
@@ -92,26 +91,16 @@ export default function StudyGroups() {
       const memberGroupIds = membershipData?.map(m => m.group_id) || [];
       setUserMemberGroupIds(memberGroupIds);
 
-      // Third, get details of groups where user is a member (if any)
-      let memberGroups: StudyGroup[] = [];
-      if (memberGroupIds.length > 0) {
-        const { data: memberGroupsData, error: memberGroupsError } = await supabase
-          .from('study_groups')
-          .select('*')
-          .in('id', memberGroupIds);
-
-        if (memberGroupsError) throw memberGroupsError;
-        memberGroups = memberGroupsData || [];
-      }
-
-      // Combine and deduplicate results
-      const allGroups = [...(publicAndOwnedGroups || []), ...memberGroups];
-      const uniqueGroups = allGroups.filter((group, index, self) => 
-        index === self.findIndex(g => g.id === group.id)
+      // Filter groups: show public groups, groups created by user, or groups user is member of
+      const visibleGroups = (allGroups || []).filter(group => 
+        !group.is_private || 
+        group.created_by === user?.id || 
+        memberGroupIds.includes(group.id)
       );
+
       // Count members for each group
       const groupsWithCounts = await Promise.all(
-        uniqueGroups.map(async (group) => {
+        visibleGroups.map(async (group) => {
           const { count } = await supabase
             .from('group_members')
             .select('*', { count: 'exact', head: true })
@@ -127,6 +116,7 @@ export default function StudyGroups() {
       setGroups(groupsWithCounts);
     } catch (error) {
       console.error('Error fetching groups:', error);
+      toast.error('Failed to load study groups');
     } finally {
       setLoading(false);
     }
@@ -186,7 +176,7 @@ export default function StudyGroups() {
   const subscribeToMessages = () => {
     if (!selectedGroup) return;
 
-    const subscription = supabase
+    const channel = supabase
       .channel(`group_messages:${selectedGroup.id}`)
       .on(
         'postgres_changes',
@@ -197,14 +187,15 @@ export default function StudyGroups() {
           filter: `group_id=eq.${selectedGroup.id}`
         },
         (payload) => {
-          fetchMessages(); // Refetch to get user email
+          // Only fetch messages if it's a new message (not from current user to avoid duplicates)
+          if (payload.new.user_id !== user?.id) {
+            fetchMessages();
+          }
         }
       )
       .subscribe();
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => channel.unsubscribe();
   };
 
   const createGroup = async (e: React.FormEvent) => {
@@ -239,8 +230,10 @@ export default function StudyGroups() {
       setIsPrivate(false);
       setShowCreateForm(false);
       fetchGroups();
+      toast.success('Group created successfully!');
     } catch (error) {
       console.error('Error creating group:', error);
+      toast.error('Failed to create group');
     }
   };
 
@@ -258,8 +251,10 @@ export default function StudyGroups() {
 
       if (error) throw error;
       fetchGroups();
+      toast.success('Joined group successfully!');
     } catch (error) {
       console.error('Error joining group:', error);
+      toast.error('Failed to join group');
     }
   };
 
@@ -279,8 +274,10 @@ export default function StudyGroups() {
 
       if (error) throw error;
       setNewMessage('');
+      // Don't fetch messages here to avoid duplicates - let the subscription handle it
     } catch (error) {
       console.error('Error sending message:', error);
+      toast.error('Failed to send message');
     } finally {
       setSendingMessage(false);
     }
@@ -441,7 +438,7 @@ export default function StudyGroups() {
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type a message..."
+                    placeholder="اكتب رسالة..."
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     disabled={sendingMessage}
                   />
@@ -463,7 +460,7 @@ export default function StudyGroups() {
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 h-96 flex items-center justify-center">
               <div className="text-center text-gray-500">
                 <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>Select a group to start chatting</p>
+                <p>اختر مجموعة لبدء المحادثة</p>
               </div>
             </div>
           )}
@@ -474,11 +471,11 @@ export default function StudyGroups() {
       {showCreateForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Create Study Group</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">إنشاء مجموعة دراسية</h3>
             <form onSubmit={createGroup} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Group Name
+                  اسم المجموعة
                 </label>
                 <input
                   type="text"
@@ -490,7 +487,7 @@ export default function StudyGroups() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Description (Optional)
+                  الوصف (اختياري)
                 </label>
                 <textarea
                   value={newGroupDescription}
@@ -508,7 +505,7 @@ export default function StudyGroups() {
                   className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                 />
                 <label htmlFor="private" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Private Group
+                  مجموعة خاصة
                 </label>
               </div>
               <div className="flex space-x-3">
@@ -517,13 +514,13 @@ export default function StudyGroups() {
                   onClick={() => setShowCreateForm(false)}
                   className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
-                  Cancel
+                  إلغاء
                 </button>
                 <button
                   type="submit"
                   className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                 >
-                  Create
+                  إنشاء
                 </button>
               </div>
             </form>
