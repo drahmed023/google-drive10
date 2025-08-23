@@ -23,7 +23,7 @@ interface QuizRequest {
 }
 
 async function generateQuizWithGemini(content: string, questionCount: number, quizType: string): Promise<QuizQuestion[]> {
-  const GEMINI_API_KEY = 'AIzaSyCYsL7v_v0OmtxEckHYQ1j-g2J1eQKv6H8'
+  const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || 'AIzaSyCYsL7v_v0OmtxEckHYQ1j-g2J1eQKv6H8'
   
   const prompt = `
   Based on the following content, generate ${questionCount} ${quizType === 'mixed' ? 'mixed (MCQ and True/False)' : quizType} questions.
@@ -52,7 +52,7 @@ async function generateQuizWithGemini(content: string, questionCount: number, qu
   `
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -65,18 +65,23 @@ async function generateQuizWithGemini(content: string, questionCount: number, qu
         }],
         generationConfig: {
           temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 1024,
         }
       })
     })
 
     if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.status}`)
+      const errorText = await response.text()
+      console.error('Gemini API response:', errorText)
+      throw new Error(`Gemini API error: ${response.status} - ${errorText}`)
     }
 
     const data = await response.json()
+    
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+      throw new Error('Invalid response structure from Gemini API')
+    }
+    
     const generatedText = data.candidates[0].content.parts[0].text
     
     // Extract JSON from the response
