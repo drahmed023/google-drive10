@@ -324,7 +324,7 @@ export function QuizGenerator({ fileContent, fileName, onClose }: QuizGeneratorP
                           )}
                         </div>
                         <span className="text-gray-800 dark:text-white">
-                          {value ? 'صحيح' : 'خطأ'}
+                          {value ? 'True' : 'False'}
                         </span>
                       </div>
                     </button>
@@ -340,7 +340,7 @@ export function QuizGenerator({ fileContent, fileName, onClose }: QuizGeneratorP
                 disabled={currentQuestionIndex === 0}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                السؤال السابق
+                Previous Question
               </button>
               
               <button
@@ -348,7 +348,7 @@ export function QuizGenerator({ fileContent, fileName, onClose }: QuizGeneratorP
                 disabled={!userAnswers[currentQuestion.id]}
                 className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
               >
-                {currentQuestionIndex === questions.length - 1 ? 'إنهاء الاختبار' : 'السؤال التالي'}
+                {currentQuestionIndex === questions.length - 1 ? 'Finish Quiz' : 'Next Question'}
               </button>
             </div>
           </div>
@@ -374,11 +374,11 @@ export function QuizGenerator({ fileContent, fileName, onClose }: QuizGeneratorP
                 <Trophy className="w-10 h-10" />
               </div>
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
-                نتائج الاختبار
+                Quiz Results
               </h2>
               <div className="flex items-center justify-center gap-6 text-sm text-gray-600 dark:text-gray-300">
-                <span>الملف: {fileName}</span>
-                <span>الوقت المستغرق: {Math.floor(timeTaken / 60)}:{(timeTaken % 60).toString().padStart(2, '0')}</span>
+                <span>File: {fileName}</span>
+                <span>Time Taken: {Math.floor(timeTaken / 60)}:{(timeTaken % 60).toString().padStart(2, '0')}</span>
               </div>
             </div>
           </div>
@@ -388,15 +388,15 @@ export function QuizGenerator({ fileContent, fileName, onClose }: QuizGeneratorP
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{percentage}%</div>
-                <div className="text-sm text-blue-800 dark:text-blue-300">النتيجة النهائية</div>
+                <div className="text-sm text-blue-800 dark:text-blue-300">Final Score</div>
               </div>
               <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">{correct}</div>
-                <div className="text-sm text-green-800 dark:text-green-300">إجابات صحيحة</div>
+                <div className="text-sm text-green-800 dark:text-green-300">Correct Answers</div>
               </div>
               <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
                 <div className="text-2xl font-bold text-red-600 dark:text-red-400">{total - correct}</div>
-                <div className="text-sm text-red-800 dark:text-red-300">إجابات خاطئة</div>
+                <div className="text-sm text-red-800 dark:text-red-300">Wrong Answers</div>
               </div>
             </div>
           </div>
@@ -404,7 +404,7 @@ export function QuizGenerator({ fileContent, fileName, onClose }: QuizGeneratorP
           {/* Detailed Results */}
           <div className="p-6">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-              مراجعة الأسئلة
+              Question Review
             </h3>
             <div className="space-y-4">
               {results.map((result, index) => (
@@ -432,20 +432,20 @@ export function QuizGenerator({ fileContent, fileName, onClose }: QuizGeneratorP
                       </h4>
                       <div className="space-y-2 text-sm">
                         <div>
-                          <span className="text-gray-600 dark:text-gray-300">إجابتك: </span>
+                          <span className="text-gray-600 dark:text-gray-300">Your Answer: </span>
                           <span className={result.isCorrect ? 'text-green-600' : 'text-red-600'}>
                             {result.question.type === 'true_false' 
-                              ? (result.userAnswer ? 'صحيح' : 'خطأ')
+                              ? (result.userAnswer ? 'True' : 'False')
                               : result.userAnswer?.toString()
                             }
                           </span>
                         </div>
                         {!result.isCorrect && (
                           <div>
-                            <span className="text-gray-600 dark:text-gray-300">الإجابة الصحيحة: </span>
+                            <span className="text-gray-600 dark:text-gray-300">Correct Answer: </span>
                             <span className="text-green-600">
                               {result.question.type === 'true_false'
-                                ? (result.correctAnswer ? 'صحيح' : 'خطأ')
+                                ? (result.correctAnswer ? 'True' : 'False')
                                 : result.correctAnswer?.toString()
                               }
                             </span>
@@ -453,7 +453,7 @@ export function QuizGenerator({ fileContent, fileName, onClose }: QuizGeneratorP
                         )}
                         {result.question.explanation && (
                           <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-blue-800 dark:text-blue-200">
-                            <strong>التفسير:</strong> {result.question.explanation}
+                            <strong>Explanation:</strong> {result.question.explanation}
                           </div>
                         )}
                       </div>
@@ -472,13 +472,13 @@ export function QuizGenerator({ fileContent, fileName, onClose }: QuizGeneratorP
                 className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <RotateCcw className="w-4 h-4" />
-                إعادة الاختبار
+                Retake Quiz
               </button>
               <button
                 onClick={onClose}
                 className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all transform hover:scale-105"
               >
-                إغلاق
+                Close
               </button>
             </div>
           </div>

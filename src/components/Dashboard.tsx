@@ -8,6 +8,7 @@ import { StudyCalendar } from './StudyCalendar'
 import StudyGroups from './StudyGroups'
 import { Settings } from './Settings'
 import GoogleDriveViewer from './GoogleDriveViewer'
+import { PDFQuizUploader } from './PDFQuizUploader'
 import { LogOut, BarChart3, Clock, FolderOpen, User, GraduationCap, CheckSquare, Calendar, Users, Settings as SettingsIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -32,6 +33,7 @@ export function Dashboard() {
     { id: 'files', name: 'Files', icon: FolderOpen },
     { id: 'groups', name: 'Study Groups', icon: Users },
     { id: 'drive', name: 'Google Drive & Quiz', icon: FolderOpen },
+    { id: 'pdf-quiz', name: 'PDF Quiz Generator', icon: GraduationCap },
     { id: 'settings', name: 'Settings', icon: SettingsIcon },
   ]
 
@@ -100,6 +102,7 @@ export function Dashboard() {
           {activeTab === 'files' && <FileManager />}
           {activeTab === 'groups' && <StudyGroups />}
           {activeTab === 'drive' && <GoogleDriveViewer />}
+          {activeTab === 'pdf-quiz' && <PDFQuizUploader />}
           {activeTab === 'settings' && <Settings />}
         </div>
       </div>
