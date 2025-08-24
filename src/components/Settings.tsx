@@ -1,11 +1,18 @@
 import React, { useState } from 'react'
-import { Settings as SettingsIcon, Palette, Moon, Sun, Bell, Volume2, VolumeX } from 'lucide-react'
+import { Settings as SettingsIcon, Palette, Moon, Sun, Bell, Volume2, VolumeX, Clock, Target, BookOpen, Zap } from 'lucide-react'
 import { useTheme, colorThemes } from '../contexts/ThemeContext'
 import toast from 'react-hot-toast'
 
 export function Settings() {
   const { theme, primaryColor, preferences, toggleTheme, setPrimaryColor, updatePreferences } = useTheme()
   const [saving, setSaving] = useState(false)
+  const [studyPreferences, setStudyPreferences] = useState({
+    defaultStudyDuration: 25,
+    defaultBreakDuration: 5,
+    dailyStudyGoal: 120, // minutes
+    reminderEnabled: true,
+    reminderTime: '09:00'
+  })
 
   const handleNotificationToggle = async () => {
     if (!preferences) return
@@ -181,13 +188,102 @@ export function Settings() {
 
         {/* Study Preferences */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Study Preferences</h3>
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+            <BookOpen className="w-5 h-5" />
+            Study Preferences
+          </h3>
           
-          <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              More study customization options coming soon! This will include default study durations, 
-              break intervals, and productivity goals.
-            </p>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <Clock className="w-4 h-4 text-purple-600" />
+                  <h4 className="font-medium text-gray-800 dark:text-white">Default Study Duration</h4>
+                </div>
+                <select
+                  value={studyPreferences.defaultStudyDuration}
+                  onChange={(e) => setStudyPreferences(prev => ({ ...prev, defaultStudyDuration: Number(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value={15}>15 minutes</option>
+                  <option value={25}>25 minutes</option>
+                  <option value={30}>30 minutes</option>
+                  <option value={45}>45 minutes</option>
+                  <option value={60}>60 minutes</option>
+                </select>
+              </div>
+
+              <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <Zap className="w-4 h-4 text-green-600" />
+                  <h4 className="font-medium text-gray-800 dark:text-white">Default Break Duration</h4>
+                </div>
+                <select
+                  value={studyPreferences.defaultBreakDuration}
+                  onChange={(e) => setStudyPreferences(prev => ({ ...prev, defaultBreakDuration: Number(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value={5}>5 minutes</option>
+                  <option value={10}>10 minutes</option>
+                  <option value={15}>15 minutes</option>
+                  <option value={20}>20 minutes</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <Target className="w-4 h-4 text-blue-600" />
+                <h4 className="font-medium text-gray-800 dark:text-white">Daily Study Goal</h4>
+              </div>
+              <div className="flex items-center gap-4">
+                <input
+                  type="range"
+                  min="30"
+                  max="480"
+                  step="30"
+                  value={studyPreferences.dailyStudyGoal}
+                  onChange={(e) => setStudyPreferences(prev => ({ ...prev, dailyStudyGoal: Number(e.target.value) }))}
+                  className="flex-1"
+                />
+                <span className="text-sm font-medium text-gray-800 dark:text-white min-w-[80px]">
+                  {Math.floor(studyPreferences.dailyStudyGoal / 60)}h {studyPreferences.dailyStudyGoal % 60}m
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Bell className="w-5 h-5" />
+                <div>
+                  <h4 className="font-medium text-gray-800 dark:text-white">Daily Study Reminder</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Get reminded to start your daily study session
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="time"
+                  value={studyPreferences.reminderTime}
+                  onChange={(e) => setStudyPreferences(prev => ({ ...prev, reminderTime: e.target.value }))}
+                  className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  disabled={!studyPreferences.reminderEnabled}
+                />
+                <button
+                  onClick={() => setStudyPreferences(prev => ({ ...prev, reminderEnabled: !prev.reminderEnabled }))}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                    studyPreferences.reminderEnabled ? 'bg-purple-600' : 'bg-gray-200'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      studyPreferences.reminderEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -219,6 +315,12 @@ export function Settings() {
                 <span className="text-sm text-gray-600 dark:text-gray-300">Sound:</span>
                 <span className="text-sm font-medium text-gray-800 dark:text-white">
                   {preferences?.sound_enabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600 dark:text-gray-300">Daily Goal:</span>
+                <span className="text-sm font-medium text-gray-800 dark:text-white">
+                  {Math.floor(studyPreferences.dailyStudyGoal / 60)}h {studyPreferences.dailyStudyGoal % 60}m
                 </span>
               </div>
             </div>

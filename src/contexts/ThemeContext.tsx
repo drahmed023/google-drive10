@@ -13,30 +13,46 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
-const colorThemes = {
+export const colorThemes = {
   purple: {
     primary: 'from-purple-600 to-blue-600',
     primaryHover: 'from-purple-700 to-blue-700',
     accent: 'purple-600',
-    accentHover: 'purple-700'
+    accentHover: 'purple-700',
+    bg: 'bg-purple-600',
+    bgHover: 'bg-purple-700',
+    text: 'text-purple-600',
+    border: 'border-purple-500'
   },
   blue: {
     primary: 'from-blue-600 to-indigo-600',
     primaryHover: 'from-blue-700 to-indigo-700',
     accent: 'blue-600',
-    accentHover: 'blue-700'
+    accentHover: 'blue-700',
+    bg: 'bg-blue-600',
+    bgHover: 'bg-blue-700',
+    text: 'text-blue-600',
+    border: 'border-blue-500'
   },
   green: {
     primary: 'from-green-600 to-emerald-600',
     primaryHover: 'from-green-700 to-emerald-700',
     accent: 'green-600',
-    accentHover: 'green-700'
+    accentHover: 'green-700',
+    bg: 'bg-green-600',
+    bgHover: 'bg-green-700',
+    text: 'text-green-600',
+    border: 'border-green-500'
   },
   orange: {
     primary: 'from-orange-600 to-red-600',
     primaryHover: 'from-orange-700 to-red-700',
     accent: 'orange-600',
-    accentHover: 'orange-700'
+    accentHover: 'orange-700',
+    bg: 'bg-orange-600',
+    bgHover: 'bg-orange-700',
+    text: 'text-orange-600',
+    border: 'border-orange-500'
   }
 }
 
@@ -59,9 +75,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
-    // Apply theme to body for better coverage
-    document.body.className = theme === 'dark' ? 'dark' : ''
+    // Apply theme and primary color classes
+    document.documentElement.className = `${theme === 'dark' ? 'dark' : ''} theme-${primaryColor}`
+    document.body.className = `${theme === 'dark' ? 'dark' : ''} theme-${primaryColor}`
   }, [theme])
+
+  useEffect(() => {
+    // Update primary color classes
+    document.documentElement.className = `${theme === 'dark' ? 'dark' : ''} theme-${primaryColor}`
+    document.body.className = `${theme === 'dark' ? 'dark' : ''} theme-${primaryColor}`
+  }, [primaryColor, theme])
 
   const loadUserPreferences = async () => {
     try {
@@ -139,9 +162,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setPrimaryColor,
       updatePreferences
     }}>
-      <div className={`theme-${primaryColor}`}>
-        {children}
-      </div>
+      {children}
     </ThemeContext.Provider>
   )
 }
@@ -153,5 +174,3 @@ export function useTheme() {
   }
   return context
 }
-
-export { colorThemes }
