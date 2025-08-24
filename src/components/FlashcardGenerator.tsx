@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Zap, RotateCcw, ChevronLeft, ChevronRight, Eye, EyeOff, Shuffle, CheckCircle } from 'lucide-react'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 
 interface Flashcard {
@@ -21,10 +23,12 @@ export function FlashcardGenerator({ fileContent, fileName, onClose }: Flashcard
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [showBack, setShowBack] = useState(false)
   const [studiedCards, setStudiedCards] = useState<Set<string>>(new Set())
+  const [savedCards, setSavedCards] = useState<Set<string>>(new Set())
   const [cardSettings, setCardSettings] = useState({
     cardCount: 10,
     difficulty: 'mixed' as 'easy' | 'medium' | 'hard' | 'mixed'
   })
+  const { user } = useAuth()
 
   const generateFlashcards = async () => {
     setStep('generating')
@@ -80,6 +84,56 @@ export function FlashcardGenerator({ fileContent, fileName, onClose }: Flashcard
     toast.success('Card marked as studied!')
   }
 
+  const saveFlashcard = async (flashcard: Flashcard) => {
+    if (!user) return
+
+    try {
+      const { error } = await supabase
+        .from('saved_flashcards')
+        .insert({
+          user_id: user.id,
+          front: flashcard.front,
+          back: flashcard.back,
+          difficulty: flashcard.difficulty,
+          source_file: fileName
+        })
+
+      if (error) throw error
+      
+      setSavedCards(prev => new Set([...prev, flashcard.id]))
+      toast.success('Flashcard saved for review!')
+    } catch (error) {
+      console.error('Error saving flashcard:', error)
+      toast.error('Failed to save flashcard')
+    }
+  }
+
+  const saveAllFlashcards = async () => {
+    if (!user) return
+
+    try {
+      const flashcardsToSave = flashcards.map(card => ({
+        user_id: user.id,
+        front: card.front,
+        back: card.back,
+        difficulty: card.difficulty,
+        source_file: fileName
+      }))
+
+      const { error } = await supabase
+        .from('saved_flashcards')
+        .insert(flashcardsToSave)
+
+      if (error) throw error
+      
+      setSavedCards(new Set(flashcards.map(card => card.id)))
+      toast.success('All flashcards saved for review!')
+    } catch (error) {
+      console.error('Error saving flashcards:', error)
+      toast.error('Failed to save flashcards')
+    }
+  }
+
   const shuffleCards = () => {
     const shuffled = [...flashcards].sort(() => Math.random() - 0.5)
     setFlashcards(shuffled)
@@ -93,6 +147,7 @@ export function FlashcardGenerator({ fileContent, fileName, onClose }: Flashcard
     setCurrentCardIndex(0)
     setShowBack(false)
     setStudiedCards(new Set())
+    setSavedCards(new Set())
     setFlashcards([])
   }
 
@@ -164,6 +219,7 @@ export function FlashcardGenerator({ fileContent, fileName, onClose }: Flashcard
                 <li>• Progress tracking</li>
                 <li>• Shuffle and review options</li>
                 <li>• Difficulty-based learning</li>
+                <li>• Save cards for later review</li>
               </ul>
             </div>
           </div>
@@ -224,6 +280,13 @@ export function FlashcardGenerator({ fileContent, fileName, onClose }: Flashcard
                 >
                   <Shuffle className="w-4 h-4" />
                 </button>
+                <button
+                  onClick={saveAllFlashcards}
+                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  title="Save All Cards"
+                >
+                  Save All
+                </button>
                 <span className="text-sm text-gray-600 dark:text-gray-300">
                   {currentCardIndex + 1} / {flashcards.length}
                 </span>
@@ -244,12 +307,20 @@ export function FlashcardGenerator({ fileContent, fileName, onClose }: Flashcard
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${getDifficultyColor(currentCard.difficulty)}`}>
                   {currentCard.difficulty.charAt(0).toUpperCase() + currentCard.difficulty.slice(1)}
                 </span>
-                {studiedCards.has(currentCard.id) && (
-                  <div className="flex items-center gap-1 text-green-600">
-                    <CheckCircle className="w-4 h-4" />
-                    <span className="text-sm">Studied</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  {studiedCards.has(currentCard.id) && (
+                    <div className="flex items-center gap-1 text-green-600">
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="text-sm">Studied</span>
+                    </div>
+                  )}
+                  {savedCards.has(currentCard.id) && (
+                    <div className="flex items-center gap-1 text-blue-600">
+                      <Zap className="w-4 h-4" />
+                      <span className="text-sm">Saved</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div 
@@ -289,6 +360,16 @@ export function FlashcardGenerator({ fileContent, fileName, onClose }: Flashcard
                     Mark as Studied
                   </button>
                 )}
+                
+                {!savedCards.has(currentCard.id) && (
+                  <button
+                    onClick={() => saveFlashcard(currentCard)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Zap className="w-4 h-4" />
+                    Save Card
+                  </button>
+                )}
               </div>
 
               <button
@@ -307,6 +388,7 @@ export function FlashcardGenerator({ fileContent, fileName, onClose }: Flashcard
 
   if (step === 'results') {
     const studiedCount = studiedCards.size
+    const savedCount = savedCards.size
     const studiedPercentage = Math.round((studiedCount / flashcards.length) * 100)
 
     return (
@@ -324,7 +406,7 @@ export function FlashcardGenerator({ fileContent, fileName, onClose }: Flashcard
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
               <div className="text-2xl font-bold text-green-600 dark:text-green-400">{studiedPercentage}%</div>
               <div className="text-sm text-green-800 dark:text-green-300">Completion Rate</div>
@@ -332,6 +414,10 @@ export function FlashcardGenerator({ fileContent, fileName, onClose }: Flashcard
             <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{studiedCount}</div>
               <div className="text-sm text-blue-800 dark:text-blue-300">Cards Studied</div>
+            </div>
+            <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+              <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{savedCount}</div>
+              <div className="text-sm text-yellow-800 dark:text-yellow-300">Cards Saved</div>
             </div>
             <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
               <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{flashcards.length}</div>
