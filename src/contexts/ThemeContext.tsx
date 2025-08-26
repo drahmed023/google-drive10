@@ -75,15 +75,45 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
-    // Apply theme and primary color classes
-    document.documentElement.className = `${theme === 'dark' ? 'dark' : ''} theme-${primaryColor}`
-    document.body.className = `${theme === 'dark' ? 'dark' : ''} theme-${primaryColor}`
+    
+    // Apply CSS custom properties for dynamic theming
+    const root = document.documentElement
+    const colorConfig = colorThemes[primaryColor as keyof typeof colorThemes]
+    
+    if (colorConfig) {
+      // Extract color values from Tailwind classes
+      const colorMap = {
+        purple: { primary: '#8b5cf6', primaryHover: '#7c3aed', accent: '#8b5cf6' },
+        blue: { primary: '#3b82f6', primaryHover: '#2563eb', accent: '#3b82f6' },
+        green: { primary: '#10b981', primaryHover: '#059669', accent: '#10b981' },
+        orange: { primary: '#f59e0b', primaryHover: '#d97706', accent: '#f59e0b' }
+      }
+      
+      const colors = colorMap[primaryColor as keyof typeof colorMap]
+      if (colors) {
+        root.style.setProperty('--primary-color', colors.primary)
+        root.style.setProperty('--primary-hover', colors.primaryHover)
+        root.style.setProperty('--accent-color', colors.accent)
+      }
+    }
   }, [theme])
 
   useEffect(() => {
-    // Update primary color classes
-    document.documentElement.className = `${theme === 'dark' ? 'dark' : ''} theme-${primaryColor}`
-    document.body.className = `${theme === 'dark' ? 'dark' : ''} theme-${primaryColor}`
+    // Update primary color CSS variables
+    const root = document.documentElement
+    const colorMap = {
+      purple: { primary: '#8b5cf6', primaryHover: '#7c3aed', accent: '#8b5cf6' },
+      blue: { primary: '#3b82f6', primaryHover: '#2563eb', accent: '#3b82f6' },
+      green: { primary: '#10b981', primaryHover: '#059669', accent: '#10b981' },
+      orange: { primary: '#f59e0b', primaryHover: '#d97706', accent: '#f59e0b' }
+    }
+    
+    const colors = colorMap[primaryColor as keyof typeof colorMap]
+    if (colors) {
+      root.style.setProperty('--primary-color', colors.primary)
+      root.style.setProperty('--primary-hover', colors.primaryHover)
+      root.style.setProperty('--accent-color', colors.accent)
+    }
   }, [primaryColor, theme])
 
   const loadUserPreferences = async () => {

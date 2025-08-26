@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* CSS Variables for dynamic theming */
+:root {
+  --primary-color: #8b5cf6;
+  --primary-hover: #7c3aed;
+  --accent-color: #8b5cf6;
+}
+
 /* Dark mode styles */
 @layer base {
   html {
@@ -11,26 +18,28 @@
   html.dark {
     color-scheme: dark;
   }
-  
-  /* Theme-specific styles */
-  .theme-purple {
-    --primary-color: #8b5cf6;
-    --primary-hover: #7c3aed;
+}
+
+/* Dynamic theme classes */
+@layer utilities {
+  .bg-primary {
+    background-color: var(--primary-color);
   }
   
-  .theme-blue {
-    --primary-color: #3b82f6;
-    --primary-hover: #2563eb;
+  .bg-primary-hover {
+    background-color: var(--primary-hover);
   }
   
-  .theme-green {
-    --primary-color: #10b981;
-    --primary-hover: #059669;
+  .text-primary {
+    color: var(--primary-color);
   }
   
-  .theme-orange {
-    --primary-color: #f59e0b;
-    --primary-hover: #d97706;
+  .border-primary {
+    border-color: var(--primary-color);
+  }
+  
+  .ring-primary {
+    --tw-ring-color: var(--primary-color);
   }
 }
 
