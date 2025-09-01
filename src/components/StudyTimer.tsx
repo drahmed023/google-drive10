@@ -210,7 +210,7 @@ export function StudyTimer() {
               cy="96"
               r="88"
               fill="none"
-              stroke={isBreak ? "#10b981" : "#8b5cf6"}
+              stroke={isBreak ? "#10b981" : "var(--primary-color)"}
               strokeWidth="8"
               strokeLinecap="round"
               strokeDasharray={`${2 * Math.PI * 88}`}
@@ -219,7 +219,7 @@ export function StudyTimer() {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className={`text-4xl font-bold ${isBreak ? 'text-green-600' : 'text-purple-600'}`}>
+            <div className={`text-4xl font-bold ${isBreak ? 'text-green-600' : 'text-primary'}`}>
               {formatTime(timeLeft)}
             </div>
             <div className="text-sm text-gray-500 mt-1">
@@ -234,7 +234,7 @@ export function StudyTimer() {
             className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 ${
               isBreak 
                 ? 'bg-green-600 hover:bg-green-700 text-white'
-                : 'bg-purple-600 hover:bg-purple-700 text-white'
+                : 'bg-primary hover:bg-primary-hover text-white'
             }`}
           >
             {isActive ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}

@@ -15,12 +15,14 @@ import { NotesEditor } from './NotesEditor'
 import { SharedNotes } from './SharedNotes'
 import { UserProfile } from './UserProfile'
 import { AIAssistant } from './AIAssistant'
+import { Settings } from './Settings'
 import { LogOut, User, Settings as SettingsIcon, Moon, Sun, Menu, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export function Dashboard() {
   const [activeTab, setActiveTab] = useState('stats')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const { user, signOut } = useAuth()
   const { theme, toggleTheme } = useTheme()
 
@@ -88,6 +90,14 @@ export function Dashboard() {
               </div>
               
               <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                title="Settings"
+              >
+                <SettingsIcon className="w-5 h-5" />
+              </button>
+              
+              <button
                 onClick={toggleTheme}
                 className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
@@ -107,6 +117,26 @@ export function Dashboard() {
         </div>
       </header>
 
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white">Settings</h2>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <Settings />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="lg:ml-64 px-4 sm:px-6 lg:px-8 py-8">
         <div className="transition-all duration-300 ease-in-out">
           {activeTab === 'stats' && <StudyStats />}
@@ -121,6 +151,7 @@ export function Dashboard() {
           {activeTab === 'notes' && <NotesEditor />}
           {activeTab === 'shared-notes' && <SharedNotes />}
           {activeTab === 'profile' && <UserProfile />}
+          {activeTab === 'settings' && <Settings />}
         </div>
       </div>
       
