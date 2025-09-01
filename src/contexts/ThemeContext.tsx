@@ -125,6 +125,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--primary-hover', colors.primaryHover)
       root.style.setProperty('--accent-color', colors.accent)
     }
+  }
+  )
 
   const loadUserPreferences = async () => {
     try {
