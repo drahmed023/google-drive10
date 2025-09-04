@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Clock, BookOpen, TrendingUp, Calendar, Award, Target, Brain, Zap, Trophy, Star } from 'lucide-react'
-import { supabase, StudySession, Task } from '../lib/supabase'
+import { supabase, StudySession, Task, Note } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 
 export function StudyStats() {
   const [sessions, setSessions] = useState<StudySession[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
+  const [notes, setNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
 
@@ -13,6 +14,7 @@ export function StudyStats() {
     if (user) {
       fetchStudySessions()
       fetchTasks()
+      fetchNotes()
     }
   }, [user])
 
@@ -48,6 +50,21 @@ export function StudyStats() {
     }
   }
 
+  const fetchNotes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setNotes(data || [])
+    } catch (error) {
+      console.error('Error fetching notes:', error)
+    }
+  }
+
   const getStats = () => {
     const totalMinutes = sessions.reduce((sum, session) => sum + session.duration, 0)
     const totalHours = Math.round(totalMinutes / 60 * 10) / 10
@@ -59,6 +76,11 @@ export function StudyStats() {
     const overdueTasks = tasks.filter(task => 
       !task.completed && task.due_date && new Date(task.due_date) < new Date()
     ).length
+    
+    // Notes statistics
+    const totalNotes = notes.length
+    const sharedNotes = notes.filter(note => note.is_shared).length
+    const totalWords = notes.reduce((sum, note) => sum + (note.word_count || 0), 0)
     
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -133,7 +155,10 @@ export function StudyStats() {
       pendingTasks,
       overdueTasks,
       currentStreak,
-      maxStreak
+      maxStreak,
+      totalNotes,
+      sharedNotes,
+      totalWords
     }
   }
 
@@ -254,9 +279,9 @@ export function StudyStats() {
         <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl shadow-lg p-6 text-white">
           <div className="flex items-center justify-between mb-4">
             <Brain className="w-8 h-8" />
-            <div className="text-2xl font-bold">{stats.pendingTasks}</div>
+            <div className="text-2xl font-bold">{stats.totalNotes}</div>
           </div>
-          <div className="text-cyan-100">Pending Tasks</div>
+          <div className="text-cyan-100">Notes Created</div>
         </div>
       </div>
 
@@ -299,6 +324,27 @@ export function StudyStats() {
                 <div className="text-xs text-gray-600 mt-2 font-medium">{day.day}</div>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <BookOpen className="w-5 h-5" />
+            Notes Statistics
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{stats.totalNotes}</div>
+              <div className="text-sm text-blue-800">Total Notes</div>
+            </div>
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">{stats.sharedNotes}</div>
+              <div className="text-sm text-green-800">Shared Notes</div>
+            </div>
+            <div className="text-center p-4 bg-purple-50 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">{stats.totalWords.toLocaleString()}</div>
+              <div className="text-sm text-purple-800">Total Words</div>
+            </div>
           </div>
         </div>
 

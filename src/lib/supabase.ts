@@ -42,6 +42,50 @@ export type Task = {
   updated_at: string
 }
 
+export type Note = {
+  id: string
+  user_id: string
+  title: string
+  content: string
+  is_shared: boolean
+  tags: string[]
+  word_count: number
+  reading_time: number
+  created_at: string
+  updated_at: string
+}
+
+export type StudyPlan = {
+  id: string
+  user_id: string
+  title: string
+  description?: string
+  subjects: string[]
+  daily_hours: number
+  total_days: number
+  goal: string
+  plan_data: any
+  is_active: boolean
+  start_date: string
+  end_date: string
+  created_at: string
+  updated_at: string
+}
+
+export type StudyPlanSession = {
+  id: string
+  plan_id: string
+  user_id: string
+  session_date: string
+  session_type: 'study' | 'review' | 'quiz' | 'break'
+  subject: string
+  duration: number
+  content: string
+  completed: boolean
+  completed_at?: string
+  created_at: string
+}
+
 export type StudyGroup = {
   id: string
   name: string
