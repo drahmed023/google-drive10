@@ -27,6 +27,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setUser(session?.user ?? null)
+        
+        // Handle new user registration
+        if (event === 'SIGNED_UP' && session?.user) {
+          try {
+            // Create user record
+            const { error: userError } = await supabase
+              .from('users')
+              .insert({
+                id: session.user.id,
+                email: session.user.email || ''
+              })
+              .select()
+              .single()
+
+            if (userError && userError.code !== '23505') { // Ignore duplicate key error
+              console.error('Error creating user record:', userError)
+            }
+
+            // Create default preferences
+            const { error: prefsError } = await supabase
+              .from('user_preferences')
+              .insert({
+                user_id: session.user.id
+              })
+
+            if (prefsError && prefsError.code !== '23505') { // Ignore duplicate key error
+              console.error('Error creating user preferences:', prefsError)
+            }
+          } catch (error) {
+            console.error('Error in user setup:', error)
+          }
+        }
+        
         setLoading(false)
       }
     )

@@ -34,6 +34,7 @@ export function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen }: SidebarP
     { id: 'flashcard-review', name: 'Flashcard Review', icon: Zap },
     { id: 'notes', name: 'My Notes', icon: StickyNote },
     { id: 'shared-notes', name: 'Shared Notes', icon: Share2 },
+    { id: 'study-planner', name: 'Study Planner', icon: Calendar },
     { id: 'profile', name: 'Profile', icon: User },
   ]
 

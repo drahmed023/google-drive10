@@ -102,7 +102,7 @@ export default function StudyGroups() {
         .from('group_messages')
         .select(`
           *,
-          users!group_messages_user_id_fkey(email)
+          users(email)
         `)
         .eq('group_id', STUDY_GROUP_ID)
         .order('created_at', { ascending: true });

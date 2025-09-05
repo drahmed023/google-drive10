@@ -13,6 +13,17 @@ export function AuthForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!email.trim() || !password.trim()) {
+      toast.error('Please fill in all fields')
+      return
+    }
+
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters')
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -21,12 +32,26 @@ export function AuthForm() {
         : await signUp(email, password)
 
       if (error) {
-        toast.error(error.message)
+        // Handle specific error messages
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('Invalid email or password')
+        } else if (error.message.includes('User already registered')) {
+          toast.error('An account with this email already exists')
+        } else if (error.message.includes('Email not confirmed')) {
+          toast.error('Please check your email and confirm your account')
+        } else {
+          toast.error(error.message)
+        }
       } else {
-        toast.success(isLogin ? 'Welcome back!' : 'Account created successfully!')
+        if (isLogin) {
+          toast.success('Welcome back!')
+        } else {
+          toast.success('Account created successfully!')
+        }
       }
     } catch (error) {
-      toast.error('An unexpected error occurred')
+      console.error('Auth error:', error)
+      toast.error('An unexpected error occurred. Please try again.')
     } finally {
       setLoading(false)
     }

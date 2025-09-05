@@ -38,7 +38,7 @@ export function SharedNotes() {
         .from('notes')
         .select(`
           *,
-          users!notes_user_id_fkey(email)
+          users(email)
         `)
         .eq('is_shared', true)
         .order('updated_at', { ascending: false })
