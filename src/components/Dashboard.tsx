@@ -15,6 +15,8 @@ import { NotesEditor } from './NotesEditor'
 import { SharedNotes } from './SharedNotes'
 import { UserProfile } from './UserProfile'
 import { StudyPlanner } from './StudyPlanner'
+import { StudyScheduleManager } from './StudyScheduleManager'
+import { ReminderManager } from './ReminderManager'
 import { AIAssistant } from './AIAssistant'
 import { Settings } from './Settings'
 import { LogOut, User, Settings as SettingsIcon, Moon, Sun, Menu, X } from 'lucide-react'
@@ -143,6 +145,8 @@ export function Dashboard() {
           {activeTab === 'stats' && <StudyStats />}
           {activeTab === 'timer' && <StudyTimer />}
           {activeTab === 'tasks' && <TaskManager />}
+          {activeTab === 'schedule' && <StudyScheduleManager />}
+          {activeTab === 'reminders' && <ReminderManager />}
           {activeTab === 'calendar' && <StudyCalendar />}
           {activeTab === 'files' && <FileManager />}
           {activeTab === 'groups' && <StudyGroups />}
@@ -151,6 +155,7 @@ export function Dashboard() {
           {activeTab === 'flashcard-review' && <FlashcardReview />}
           {activeTab === 'notes' && <NotesEditor />}
           {activeTab === 'shared-notes' && <SharedNotes />}
+          {activeTab === 'study-planner' && <StudyPlanner />}
           {activeTab === 'profile' && <UserProfile />}
           {activeTab === 'settings' && <Settings />}
         </div>

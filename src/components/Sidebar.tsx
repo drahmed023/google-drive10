@@ -1,17 +1,19 @@
 import React from 'react'
-import { 
-  BarChart3, 
-  Clock, 
-  CheckSquare, 
-  Calendar, 
-  FolderOpen, 
-  Users, 
-  GraduationCap, 
-  Zap, 
+import {
+  BarChart3,
+  Clock,
+  CheckSquare,
+  Calendar,
+  FolderOpen,
+  Users,
+  GraduationCap,
+  Zap,
   FileText,
   StickyNote,
   Share2,
-  User
+  User,
+  Bell,
+  CalendarDays
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -26,6 +28,8 @@ export function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen }: SidebarP
     { id: 'stats', name: 'Statistics', icon: BarChart3 },
     { id: 'timer', name: 'Study Timer', icon: Clock },
     { id: 'tasks', name: 'Tasks', icon: CheckSquare },
+    { id: 'schedule', name: 'Schedule Manager', icon: CalendarDays },
+    { id: 'reminders', name: 'Reminders', icon: Bell },
     { id: 'calendar', name: 'Calendar', icon: Calendar },
     { id: 'files', name: 'Files', icon: FolderOpen },
     { id: 'groups', name: 'Study Group', icon: Users },
